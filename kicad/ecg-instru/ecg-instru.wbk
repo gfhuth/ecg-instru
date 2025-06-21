@@ -1,0 +1,89 @@
+{
+  "last_sch_text_sim_command": "",
+  "tabs": [
+    {
+      "analysis": "OP",
+      "commands": [
+        ".op",
+        ".kicad adjustpaths",
+        ".save all",
+        ".probe alli",
+        ".probe allp"
+      ]
+    },
+    {
+      "analysis": "AC",
+      "commands": [
+        ".ac dec 100 100m 1k",
+        ".kicad adjustpaths",
+        ".save all",
+        ".probe alli",
+        ".probe allp"
+      ],
+      "dottedSecondary": true,
+      "margins": {
+        "bottom": 45,
+        "left": 70,
+        "right": 70,
+        "top": 30
+      },
+      "measurements": [],
+      "showGrid": true,
+      "traces": [
+        {
+          "color": "rgb(228, 26, 28)",
+          "signal": "V(VFILTER) (phase)",
+          "trace_type": 517
+        },
+        {
+          "color": "rgb(228, 26, 28)",
+          "signal": "V(VFILTER) (gain)",
+          "trace_type": 521
+        },
+        {
+          "color": "rgb(152, 78, 163)",
+          "signal": "V(VSENSE) (phase)",
+          "trace_type": 517
+        }
+      ]
+    },
+    {
+      "analysis": "TRAN",
+      "commands": [
+        ".tran 1m 10",
+        ".kicad adjustpaths",
+        ".save all",
+        ".probe alli",
+        ".probe allp"
+      ],
+      "dottedSecondary": true,
+      "margins": {
+        "bottom": 45,
+        "left": 70,
+        "right": 70,
+        "top": 30
+      },
+      "measurements": [],
+      "showGrid": true,
+      "traces": [
+        {
+          "color": "rgb(77, 175, 74)",
+          "signal": "V(VADC)",
+          "trace_type": 257
+        }
+      ]
+    },
+    {
+      "analysis": "OP",
+      "commands": [
+        ".op",
+        ".kicad adjustpaths",
+        ".save all",
+        ".probe alli",
+        ".probe allp"
+      ]
+    }
+  ],
+  "user_defined_signals": [],
+  "version": 6
+}
