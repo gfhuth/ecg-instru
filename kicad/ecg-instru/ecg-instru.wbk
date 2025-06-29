@@ -31,19 +31,24 @@
       "showGrid": true,
       "traces": [
         {
-          "color": "rgb(228, 26, 28)",
-          "signal": "V(VFILTER) (phase)",
+          "color": "rgb(55, 126, 184)",
+          "signal": "V(VADC) (phase)",
           "trace_type": 517
         },
         {
-          "color": "rgb(228, 26, 28)",
-          "signal": "V(VFILTER) (gain)",
+          "color": "rgb(55, 126, 184)",
+          "signal": "V(VADC) (gain)",
           "trace_type": 521
         },
         {
           "color": "rgb(152, 78, 163)",
           "signal": "V(VSENSE) (phase)",
           "trace_type": 517
+        },
+        {
+          "color": "rgb(152, 78, 163)",
+          "signal": "V(VSENSE) (gain)",
+          "trace_type": 521
         }
       ]
     },
@@ -66,6 +71,11 @@
       "measurements": [],
       "showGrid": true,
       "traces": [
+        {
+          "color": "rgb(152, 78, 163)",
+          "signal": "V(GNDREF)",
+          "trace_type": 257
+        },
         {
           "color": "rgb(77, 175, 74)",
           "signal": "V(VADC)",

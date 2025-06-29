@@ -18,6 +18,9 @@ _autosave-*
 fp-info-cache
 ~*.lck
 \#auto_saved_files#
+*.pdf
+*.gbr
+*.gbrjob
 
 # Netlist files (exported from Eeschema)
 *.net
@@ -29,3 +32,6 @@ fp-info-cache
 # Exported BOM files
 *.xml
 *.csv
+
+# Windows files
+*Zone.Identifier
