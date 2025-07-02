@@ -35,3 +35,26 @@ fp-info-cache
 
 # Windows files
 *Zone.Identifier
+
+# Arquivos e pastas locais que não devem ir pro GitHub
+.vscode/
+.pio/
+*.pyc
+__pycache__/
+*.elf
+*.bin
+*.hex
+*.map
+*.d
+*.o
+*.a
+*.log
+*.csv
+*.bak
+*.swp
+**/.DS_Store
+
+# Arquivos de sistema (Windows/macOS/Linux)
+Thumbs.db
+ehthumbs.db
+Desktop.ini
