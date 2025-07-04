@@ -15,6 +15,9 @@ extern volatile uint16_t beatCount;
 extern volatile bool recording;
 extern uint32_t startTimeMillis;
 
+extern volatile uint16_t begin_index;
+
+
 void IRAM_ATTR sampleISR();
 void setupSampling();
 

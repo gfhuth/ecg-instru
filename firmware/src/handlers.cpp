@@ -12,10 +12,11 @@ void handleRoot() {
 }
 
 void handleECG() {
-  const uint16_t chunk = 40;
+  
   String json = "[";
   noInterrupts();
-  int16_t i = (bufferIndex - chunk + bufferSize) % bufferSize;
+  int16_t i = begin_index;
+  int16_t chunk = (bufferIndex - begin_index) % bufferSize;
   for (uint16_t c = 0; c < chunk; c++) {
     json += String(ecgBuffer[i]);
     if (c < chunk - 1) json += ",";
@@ -23,6 +24,7 @@ void handleECG() {
   }
   interrupts();
   json += "]";
+  begin_index = bufferIndex;
   server.send(200, "application/json", json);
 }
 
@@ -47,11 +49,11 @@ void handleStart() {
 }
 
 void handleDownload() {
-  String csv = "bpm,timestamp_epoch_s\n";
+  String csv = "bpm,timestamp_epoch_s,timestamp_epoch_us\n";
   for (uint16_t i = 0; i < beatCount; i++) {
-    time_t absolute = (startTimeMillis / 1000) + beatLog[i].timestamp;
-    uint32_t millisFrac = (uint32_t)((beatLog[i].timestamp - (uint32_t)beatLog[i].timestamp) * 1000);
-    csv += String(beatLog[i].bpm, 2) + "," + String(absolute) + "." + String(millisFrac) + "\n";
+    csv += String(beatLog[i].bpm, 2) + "," + 
+           String(beatLog[i].timestamp) + "," + 
+           String(beatLog[i].timestamp_us) + "\n";
   }
   server.sendHeader("Content-Disposition", "attachment; filename=\"ecg_bpm.csv\"");
   server.send(200, "text/csv", csv);

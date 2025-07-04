@@ -10,6 +10,9 @@ volatile uint16_t beatCount = 0;
 volatile bool recording = false;
 uint32_t startTimeMillis = 0;
 
+volatile uint16_t begin_index = 0;
+
+
 void IRAM_ATTR sampleISR() {
   uint16_t value = analogRead(ecgPin);
   uint32_t now = millis();
@@ -25,7 +28,10 @@ void IRAM_ATTR sampleISR() {
         currentBPM = 60.0 / period;
         if (recording && beatCount < maxBeats) {
           beatLog[beatCount].bpm = currentBPM;
-          beatLog[beatCount].timestamp = time(nullptr);
+          struct timeval tv;
+          gettimeofday(&tv, nullptr);
+          beatLog[beatCount].timestamp = (uint32_t)tv.tv_sec;
+          beatLog[beatCount].timestamp_us = (uint32_t)tv.tv_usec;
           beatCount++;
         }
       }

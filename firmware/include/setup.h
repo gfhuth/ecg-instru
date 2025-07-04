@@ -13,7 +13,11 @@ const uint16_t bufferSize = 1000;
 const uint16_t peakThreshold = 2200;
 const uint32_t refractoryMs = 250;
 
-struct BeatInfo { float bpm; float timestamp; };
+struct BeatInfo {
+    float bpm; 
+    uint32_t timestamp;
+    uint32_t timestamp_us;
+};
 const uint16_t maxBeats = 1024;
 
 void setup();
