@@ -1,25 +1,46 @@
 #ifndef SETUP_H
 #define SETUP_H
+
 #include <stdint.h>
-#include <time.h>
+#include "driver/adc.h"
+#include "esp_adc_cal.h"
+#include "sampling.h"
 
-extern const char* ssid;
-extern const char* password;
+// Configurações do ADC
+const int adcPin = 35;           // Pino de entrada analógica
+const int adcChannel = 7;        // Canal ADC1_CH7 (pino 35)
+const int adcUnit = 1;           // ADC1
 
-const int ecgPin = 35;
-const uint16_t sampleRateHz = 200;
-const uint16_t bufferSize = 1000;
+// Configurações de amostragem
+const uint32_t sampleRateHz = 200;        // Frequência de amostragem (configurável)
+const uint32_t consumerRateMs = 25;       // Taxa de execução do consumidor (configurável)
 
-const uint16_t peakThreshold = 2200;
-const uint32_t refractoryMs = 250;
+// Cálculo do tamanho do buffer baseado na taxa de amostragem e taxa do consumidor
+const uint32_t bufferSize = (sampleRateHz * consumerRateMs * (5/2)) / 1000;  // Amostras por ciclo do consumidor
 
-struct BeatInfo {
-    float bpm; 
-    uint32_t timestamp;
-    uint32_t timestamp_us;
+// Configurações do DMA
+const int dmaChan = 0;           // Canal DMA
+const int dmaPriority = 1;       // Prioridade do DMA
+
+// Estrutura para dados da amostra
+struct SampleData {
+    uint32_t timestamp;          // Timestamp em milissegundos
+    uint16_t adcValue;           // Valor do ADC (12 bits)
+    uint32_t bufferIndex;        // Índice no buffer
 };
-const uint16_t maxBeats = 1024;
 
+// Variáveis globais para controle da fila circular
+extern volatile uint32_t bufferInicio;    // Índice de início da fila
+extern volatile uint32_t bufferFim;       // Índice de fim da fila
+extern volatile bool bufferOverflow;      // Flag de overflow
+
+// Funções
 void setup();
+void loop();
+void setupADC();
+void setupDMA();
+void startSampling();
+void stopSampling();
+void consumerTask();
 
 #endif

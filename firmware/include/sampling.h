@@ -1,24 +1,22 @@
 #ifndef SAMPLING_H
 #define SAMPLING_H
-#include <Arduino.h>
-#include <Ticker.h>
-#include <esp_attr.h>
-#include "setup.h"
 
-extern volatile uint16_t ecgBuffer[bufferSize];
-extern volatile uint16_t bufferIndex;
-extern Ticker sampler;
-extern volatile uint32_t lastPeakMillis;
-extern volatile float currentBPM;
-extern volatile BeatInfo beatLog[maxBeats];
-extern volatile uint16_t beatCount;
-extern volatile bool recording;
-extern uint32_t startTimeMillis;
+#include <stdint.h>
 
-extern volatile uint16_t begin_index;
+// Declarações das variáveis globais
+extern volatile uint16_t adcBuffer[];
+extern volatile uint32_t bufferInicio;
+extern volatile uint32_t bufferFim;
+extern volatile bool bufferOverflow;
 
+// Declarações das funções
+void setupADC();
+void setupDMA();
+void startSampling();
+void stopSampling();
+void consumerTask();
 
-void IRAM_ATTR sampleISR();
-void setupSampling();
+// Callbacks (declarados como IRAM_ATTR para melhor performance)
+void IRAM_ATTR samplingTimerCallback(void* arg);
 
-#endif
+#endif 
