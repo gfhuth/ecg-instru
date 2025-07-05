@@ -4,7 +4,6 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/queue.h>
-#include <freertos/timers.h>
 #include "config.h"
 
 // ============================================================================
@@ -33,10 +32,9 @@ typedef struct {
 // Fila circular global
 circular_buffer_t circular_buffer;
 
-// Handles das tasks e timers
+// Handles das tasks
 TaskHandle_t producer_task_handle = NULL;
 TaskHandle_t consumer_task_handle = NULL;
-TimerHandle_t consumer_timer_handle = NULL;
 
 // Semaforo para sincronização entre produtor e consumidor
 SemaphoreHandle_t buffer_semaphore;
@@ -44,7 +42,7 @@ SemaphoreHandle_t buffer_semaphore;
 // Calibração do ADC
 esp_adc_cal_characteristics_t adc_chars;
 
-// Contador de amostras para debug
+// Contador de amostras
 volatile uint32_t samples_produced = 0;
 volatile uint32_t samples_consumed = 0;
 
@@ -150,9 +148,6 @@ void producer_task(void *parameter) {
         // Lê o valor do ADC
         uint32_t adc_reading = adc1_get_raw(ADC_UNIT);
         
-        // Converte para tensão (opcional, para debug)
-        uint32_t voltage = esp_adc_cal_raw_to_voltage(adc_reading, &adc_chars);
-        
         // Obtém o timestamp atual
         uint32_t timestamp = millis();
         
@@ -160,14 +155,6 @@ void producer_task(void *parameter) {
         if (add_sample_to_buffer(timestamp, adc_reading)) {
             samples_produced++;
             sample_count++;
-            
-            // Debug a cada N amostras (configurável)
-            #if DEBUG_ENABLED
-            if (sample_count % PRODUCER_DEBUG_INTERVAL == 0) {
-                Serial.printf("Produtor: %d amostras produzidas, Buffer: %d/%d\n", 
-                            sample_count, buffer_count(), BUFFER_SIZE);
-            }
-            #endif
         } else {
             Serial.println("ERRO: Buffer cheio - perda de dados!");
         }
@@ -182,11 +169,11 @@ void producer_task(void *parameter) {
 // ============================================================================
 
 void consumer_task(void *parameter) {
-    // Cabeçalho já impresso no setup
+    const TickType_t xDelay = pdMS_TO_TICKS(CONSUMER_TRIGGER_MS); // Delay em ticks
+    
+    Serial.println("Task do consumidor iniciada");
+    
     while (true) {
-        // Aguarda o sinal do timer
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-        
         // Conta quantos elementos há para processar
         uint16_t elements_to_process = buffer_count();
         
@@ -212,18 +199,10 @@ void consumer_task(void *parameter) {
                 samples_consumed++;
             }
         }
+        
+        // Aguarda o próximo ciclo de processamento
+        vTaskDelay(xDelay);
     }
-}
-
-// ============================================================================
-// CALLBACK DO TIMER DO CONSUMIDOR
-// ============================================================================
-
-void consumer_timer_callback(TimerHandle_t xTimer) {
-    // Notifica a task do consumidor
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    vTaskNotifyGiveFromISR(consumer_task_handle, &xHigherPriorityTaskWoken);
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 // ============================================================================
@@ -272,18 +251,6 @@ void setup() {
         0                        // Core
     );
     
-    // Cria o timer para trigger do consumidor
-    consumer_timer_handle = xTimerCreate(
-        "ConsumerTimer",         // Nome do timer
-        pdMS_TO_TICKS(CONSUMER_TRIGGER_MS),  // Período
-        pdTRUE,                  // Auto-reload
-        NULL,                    // ID do timer
-        consumer_timer_callback  // Callback
-    );
-    
-    // Inicia o timer
-    xTimerStart(consumer_timer_handle, 0);
-    
     Serial.println("Sistema inicializado com sucesso!");
     Serial.println("Aguardando dados...\n");
 }
@@ -296,14 +263,4 @@ void loop() {
     // O loop principal fica vazio pois tudo é feito nas tasks
     // Apenas um delay para não sobrecarregar o sistema
     delay(1000);
-    
-    // Debug periódico
-    #if DEBUG_ENABLED
-    static uint32_t last_debug = 0;
-    if (millis() - last_debug > DEBUG_INTERVAL_MS) {
-        Serial.printf("Status: Produzidas=%lu, Consumidas=%lu, Buffer=%d/%d\n",
-                    samples_produced, samples_consumed, buffer_count(), BUFFER_SIZE);
-        last_debug = millis();
-    }
-    #endif
 } 
