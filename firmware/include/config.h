@@ -14,14 +14,14 @@
  * Valor recomendado: 100-1000 Hz
  * Valores muito altos podem causar perda de dados
  */
-#define SAMPLING_RATE_HZ        200
+#define SAMPLING_RATE_HZ        500
 
 /**
  * Intervalo de trigger do consumidor em milissegundos
  * Valor recomendado: 20-100 ms
  * Valores muito baixos podem sobrecarregar a saída serial
  */
-#define CONSUMER_TRIGGER_MS     40
+#define CONSUMER_TRIGGER_MS     10
 
 // ============================================================================
 // CONFIGURAÇÕES DO ADC
@@ -67,7 +67,7 @@
  * Valores muito baixos podem causar perda de dados
  * Valores muito altos consomem mais memória
  */
-#define FATOR_BUFFER           3
+#define FATOR_BUFFER           6
 
 /**
  * Cálculo automático do tamanho do buffer
@@ -91,37 +91,8 @@
  * Valores: 1-24 (maior número = maior prioridade)
  * Recomendado: 2-4
  */
-#define CONSUMER_TASK_PRIORITY     2
+#define CONSUMER_TASK_PRIORITY     4
 
-/**
- * Prioridade do timer do consumidor
- * Valores: 1-24 (maior número = maior prioridade)
- * Recomendado: 1-2
- */
-#define CONSUMER_TIMER_PRIORITY    1
-
-// ============================================================================
-// CONFIGURAÇÕES DE DEBUG
-// ============================================================================
-
-/**
- * Habilita mensagens de debug detalhadas
- * 0 = Desabilitado (melhor performance)
- * 1 = Habilitado (mais informações)
- */
-#define DEBUG_ENABLED          1
-
-/**
- * Intervalo para debug periódico em milissegundos
- * Apenas usado se DEBUG_ENABLED = 1
- */
-#define DEBUG_INTERVAL_MS      5000
-
-/**
- * Frequência de debug do produtor (a cada N amostras)
- * Apenas usado se DEBUG_ENABLED = 1
- */
-#define PRODUCER_DEBUG_INTERVAL 100
 
 // ============================================================================
 // CONFIGURAÇÕES DE COMUNICAÇÃO SERIAL
