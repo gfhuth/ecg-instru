@@ -58,7 +58,7 @@ window.onload = function () {
 	chart.render();
 	
 	console.log("connecting to web socket");
-	webSocket1 = new WebSocket('ws://' + baseUrl + ':81/');
+	webSocket1 = new WebSocket('ws://' + baseUrl + '/test');
 	webSocket1.binaryType = 'arraybuffer';
 	webSocket1.onmessage=function(ws){
 		if(running){
@@ -99,7 +99,6 @@ function toggleStartStop(){
 		// need to find a way to reset zoom level here
 	}
 }
-
 
 </script>
 </head>

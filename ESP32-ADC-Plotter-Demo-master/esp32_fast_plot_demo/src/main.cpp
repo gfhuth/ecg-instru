@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <WebSocketsServer.h>
+// #include <WebSocketsServer.h>
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
 #include "SPIFFS.h"
@@ -23,7 +23,7 @@ const char* password = "my_wifi_pw";
 /** ADC CONFIG **/
 i2s_port_t i2s_port = I2S_NUM_0;   // I2S Port 
 adc1_channel_t adc_channel = ADC1_CHANNEL_7; //GPIO35  (SET THIS FOR YOUR HARDWARE)
-const uint16_t adc_sample_freq = 44100;
+const uint16_t adc_sample_freq = 10000;
 const uint16_t dma_buffer_len = 1024;
 const uint16_t i2s_buffer_len = dma_buffer_len;
 const uint16_t ws_tx_buffer_len = dma_buffer_len;
@@ -32,7 +32,7 @@ uint16_t* ws_send_buffer = (uint16_t*)calloc(ws_tx_buffer_len, sizeof(uint16_t))
 
 
 AsyncWebServer    server(80);
-WebSocketsServer  webSocket = WebSocketsServer(81);
+// WebSocketsServer  webSocket = WebSocketsServer(81);
 AsyncEventSource  events("/events");
 AsyncWebServerRequest *request;
 AsyncWebSocket    ws("/test");
@@ -116,6 +116,7 @@ void serverons(){
   });
   
   server.on("/Stop", HTTP_GET, [](AsyncWebServerRequest * request) {
+    Serial.println("----STOP----");
     Serial.println("stopping stream");
     request->send(204);
     streaming = false;
@@ -123,6 +124,7 @@ void serverons(){
   });
   
   server.on("/Start", HTTP_GET, [](AsyncWebServerRequest * request) {
+    Serial.println("----START----");
     Serial.println("starting stream");
     request->send(204);
     sampling = true;
@@ -135,8 +137,8 @@ void serverons(){
 //////////////////////////   SETUP   ////////////////////////////////////////
 void setup() {
   delay(500);
-  Serial.begin(500000);
-  delay(10000);
+  Serial.begin(115200);
+  delay(5000);
   Serial.println("Hello World!");
   // Setup Wifi:
   WiFi.begin(ssid, password);     //Connect to your WiFi router
@@ -158,7 +160,7 @@ void setup() {
   serverons();
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
-  webSocket.begin();
+  server.begin();
   xTaskCreatePinnedToCore(getDataLoopTask, "getDataLoopTask", 80000, NULL, 0, &samplingTaskHandle, 0 );
 
   prev_micros = micros();
@@ -170,7 +172,7 @@ void setup() {
 // Handle infrastructural things in main loop.
 // Sampling is handled in separate tasks outside of this loop.
 void loop() {
-  webSocket.loop();
+  // webSocket.loop();
   vTaskDelay(1);
 }
 
@@ -208,12 +210,19 @@ static const inline void sendSamples(){
   for(int i=0; i<ws_tx_buffer_len; i+=2){  // caution: this is not robust to odd buffer lens
     ws_send_buffer[i] = i2s_read_buff[i+1] & 0x0FFF;
     ws_send_buffer[i+1] = i2s_read_buff[i] & 0x0FFF;
-    //Serial.printf("%04X\n",ws_send_buffer[i]);
+    // Serial.println(ws_send_buffer[i]);
   }
+  
+  // Serial.print("Samples: ");
+  // for(int i=0; i<10; i++){  // só os primeiros 10 para não lotar
+  //   Serial.print(ws_send_buffer[i]);
+  //   Serial.print(" ");
+  // }
+  // Serial.println();
+
 
   // Send binary packet
-  webSocket.sendBIN(0, (uint8_t *)&ws_send_buffer[0], ws_tx_buffer_len*sizeof(uint16_t)); 
-
+  ws.binaryAll((uint8_t*)ws_send_buffer, ws_tx_buffer_len * sizeof(uint16_t));
   //prev_micros = micros_now;  // use for troubleshooting sampling rate
 }
 
