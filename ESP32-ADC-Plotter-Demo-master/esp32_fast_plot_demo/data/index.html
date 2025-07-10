@@ -2,102 +2,121 @@
 <html>
 <head>
 
-<!-- <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script> -->
 <script type="text/javascript" src="CanvasJs"></script>
-<!-- <script type="text/javascript" src="http://192.168.1.21/CanvasJs"></script> -->
 
 <script>
 
 var running = true;
-var updateInterval = 30; // msec
-var dataLength = 10000; // number of dataPoints visible at any point
-//var baseUrl = "192.168.1.21";
+var updateInterval = 50; // msec - Aumentei o intervalo para uma renderização mais suave
+var dataBufferSize = 1000; // Mantemos um buffer grande para o histórico, se necessário
+var visibleXRange = 100000; // Define quantos "xVal units" serão visíveis no eixo X
 var baseUrl = window.location.hostname;
 var chart;
 
-
 window.onload = function () {
-	var xVal = 0;
-	var dps = [];
-	
-	console.log("initializing chart container");
-	chart = new CanvasJS.Chart("chartContainer", {
-		title :{
-			text: "Raw Audio"
-		},
-		axisX:{
-			gridThickness: 0,
-			tickLength: 0,
-			lineThickness: 0,
-			labelFormatter: function(){
-				return " ";
-			}
-		},
-		axisY: {
-			//includeZero: false,
-			minimum: 0,
-			maximum: 4096,
-			interval: 1024,
-			valueFormatString: "###0"
-		},      
-		data: [{
-			type: "line",
-			dataPoints: dps
-		}],
-		//interactivityEnabled: false
-		zoomEnabled: true, 
-		zoomType: "xy"
-	});
-	
-	for(var j=0; j<dataLength-1; j++){
-		dps.push({
-			x: xVal++,
-			y: 2048
-		});
-	}
-	chart.render();
-	
-	console.log("connecting to web socket");
-	webSocket1 = new WebSocket('ws://' + baseUrl + '/test');
-	webSocket1.binaryType = 'arraybuffer';
-	webSocket1.onmessage=function(ws){
-		if(running){
-			if(event.data instanceof ArrayBuffer ){
-				data = new Uint16Array(event.data);
-			} else if(typeof event.data === "string"){
-				data = event.data.split(",").map(Number);
-			}
-			
-			numSamples = data.length;
-			for(var j=0; j<numSamples-1; j++){
-				dps.push({
-					x: xVal,
-					y: data[j]
-				});
-				xVal++;
-				dps.shift();
-			}
-		}
-	};
-	
-	setInterval(function(){
-		if(running) chart.render();
-	}, updateInterval);	
-}
-	
+    var xVal = 0;
+    var dpsRaw = [];
+    var dpsFiltered = [];
+    
+    console.log("initializing chart container");
+    chart = new CanvasJS.Chart("chartContainer", {
+        title :{
+            text: "Raw Audio and Filtered Audio"
+        },
+        axisX:{
+            // Não mais 'escondido', mas agora controlamos o range visível
+            // Isso permite que o viewportMinimum/Maximum funcionem
+            // gridThickness: 1, // Pode mostrar o grid novamente se quiser
+            // tickLength: 5,
+            // lineThickness: 1,
+            labelFormatter: function(e){
+                // Formate o label como desejar, talvez tempo em segundos ou milissegundos
+                // Por exemplo, para mostrar o xVal como segundos (se cada xVal for 1ms)
+                return (e.value / 1000).toFixed(2) + "s"; 
+            }
+        },
+        axisY: {
+            minimum: 0,
+            maximum: 4096,
+            interval: 1024,
+            valueFormatString: "###0"
+        },
+        data: [
+          {
+            type: "line",
+            name: "Raw",
+            showInLegend: true,
+            dataPoints: dpsRaw
+          },
+          {
+            type: "line",
+            name: "Filtered",
+            showInLegend: true,
+            dataPoints: dpsFiltered
+          }
+        ],
+        zoomEnabled: true, 
+        zoomType: "xy"
+    });
+    
+    // Inicialize com alguns pontos para que o gráfico não fique vazio
+    for(var j=0; j<visibleXRange; j++){ // Inicializa apenas o que será visível
+        dpsRaw.push({x: xVal, y: 2048});
+        dpsFiltered.push({x: xVal, y: 2048});
+        xVal++;
+    }
+    chart.render();
+    
+    console.log("connecting to web socket");
+    webSocket1 = new WebSocket('ws://' + baseUrl + '/test');
+    webSocket1.binaryType = 'arraybuffer';
+    
+    webSocket1.onmessage = function(event) {
+        if (!running) return;
 
+        if (event.data instanceof ArrayBuffer) {
+            let data = new Uint16Array(event.data);
+            let len = data.length / 2;
+
+            for (let j = 0; j < len; j++) {
+                dpsRaw.push({ x: xVal, y: data[2 * j] });
+                dpsFiltered.push({ x: xVal, y: data[2 * j + 1] });
+                xVal++; // Incrementa xVal para cada novo ponto, independentemente do buffer
+
+                // Mantém o tamanho do buffer de dados para o histórico
+                if (dpsRaw.length > dataBufferSize) {
+                    dpsRaw.shift();
+                    dpsFiltered.shift();
+                }
+            }
+        }
+    };
+    
+    // Agora o intervalo de atualização é responsável por mover a viewport e renderizar
+    setInterval(function(){
+        if(running){
+            // Calcula o viewport mínimo e máximo para rolar o gráfico
+            // O gráfico sempre mostrará os últimos 'visibleXRange' pontos
+            chart.options.axisX.viewportMinimum = xVal - visibleXRange;
+            chart.options.axisX.viewportMaximum = xVal;
+            chart.render();
+        }
+    }, updateInterval);    
+}
 
 function toggleStartStop(){
-	if(running){
-		console.log("Stopping");
-		fetch('http://' + baseUrl + '/Stop', {mode: "no-cors"});
-		running = false;
-	} else {
-		console.log("Starting");
-		fetch('http://' + baseUrl + '/Start', {mode: "no-cors"});
-		running = true;
-		// need to find a way to reset zoom level here
-	}
+    if(running){
+        console.log("Stopping");
+        fetch('http://' + baseUrl + '/Stop', {mode: "no-cors"});
+        running = false;
+    } else {
+        console.log("Starting");
+        fetch('http://' + baseUrl + '/Start', {mode: "no-cors"});
+        running = true;
+        // Se quiser resetar o zoom ao iniciar:
+        // chart.options.axisX.viewportMinimum = null;
+        // chart.options.axisX.viewportMaximum = null;
+    }
 }
 
 </script>
